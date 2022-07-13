@@ -1,0 +1,8 @@
+.div {
+    /* padding-top: 5%; */
+    border: 7px solid rgba(28,110,164,0.42);
+    border-radius: 19px 0px 19px 0px;
+}
+td {
+    text-align: right;
+}
