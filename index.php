@@ -1,14 +1,63 @@
 <?php 
 
-$bdd = new PDO('mysql:localhost;dbname=espace_membre','root','');
+$bdd = new PDO('mysql:host=localhost;dbname=espace_membre','root','');
 
 if(isset($_POST['forminscription'])) 
 {
+    $pseudo = htmlspecialchars($_POST['pseudo']);
+    $mail = htmlspecialchars($_POST['mail']);
+    $mail2 = htmlspecialchars($_POST['mail2']);
+    $mdp = $_POST['mdp'];
+    $mdp2 = $_POST['mdp2'];   
+
     if(!empty($_POST['pseudo']) AND !empty($_POST['mail']) AND !empty($_POST['mail2']) AND !empty($_POST['mdp']) AND !empty($_POST['mdp2']))
     {
-        echo "Bienvenue" ;
+
+        $pseudolength = strlen($pseudo);
+        if ($pseudolength <= 255)
+        {
+            if($mail == $mail2)
+            { 
+                if(filter_var($mail,FILTER_VALIDATE_EMAIL))
+                {
+                    $reqmail = $bdd->prepare("SELECT * FROM membre WHERE mail = ?");
+                    $reqmail->execute(array($mail));
+                    $mailexist = $reqmail->rowCount();
+                    if($mailexist == 0)
+                    {
+                        if($mdp == $mdp2)
+                        {
+                            $mdpcrypt = password_hash($mdp,PASSWORD_BCRYPT );
+                            $insertmbr = $bdd->prepare("INSERT INTO membre(pseudo,mail,`mot de passe`) VALUES(?, ? , ? )");
+                            $insertmbr ->execute(array($pseudo, $mail, $mdpcrypt));
+                            $erreur = "votre compte a bien été créé";
+                        }
+                        else
+                        {
+                            $erreur = "Vos mots de passe ne correspondent pas";
+                        }
+                    }
+                    else    
+                    {
+                        $erreur = "Adresse mail deja utilisée ";
+                    }
+                }
+                else
+                {
+                    $erreur = "Votre adresse mail n'est pas valide";
+                }
+            }
+            else
+            {
+                $erreur = "Vos adresses ne corespondent pas";
+            }
+        }
+        else
+        {
+            $erreur = "Votre pseudo ne doit pas dépasser 255 caractères";
+        }
     } else {
-        echo "Remplir les champs vide";
+        $erreur = "Tous les champs doivent etre complétés";
     }
 }
 
@@ -22,14 +71,14 @@ if(isset($_POST['forminscription']))
     <body>
         <div class="div" align="center">
              <h2>Inscription</h2><br>
-            <form metode="POST" action="">
+            <form method="POST" action="">
                 <table>
                     <tr>
                         <td>
                              <label for="pseudo">Pseudo</label>
                         </td>
                         <td>
-                            <input type="text"placeholder="votre pseudo" id="pseudo" name="pseudo">
+                            <input type="text"placeholder="votre pseudo" id="pseudo" name="pseudo" value="<?php if(isset($pseudo)) { echo $pseudo;}?>"/>
                         </td>
                     </tr>
                     <tr>
@@ -37,7 +86,7 @@ if(isset($_POST['forminscription']))
                             <label for="mail">Mail</label>
                         </td>
                         <td>
-                            <input type="mail"placeholder="votre mail" id="mail" name="mail">
+                            <input type="mail"placeholder="votre mail" id="mail" name="mail" value="<?php if(isset($pseudo)) { echo $mail;}?>"/>
                         </td>
                     </tr>
                     <tr>
@@ -45,7 +94,7 @@ if(isset($_POST['forminscription']))
                             <label for="mail2">Confirmation du mail</label>
                         </td>
                         <td>
-                            <input type="mail"placeholder="confirmez votre mail" id="mail2" name="mail2">
+                            <input type="mail"placeholder="confirmez votre mail" id="mail2" name="mail2" value="<?php if(isset($mail2)) { echo $pseudo;}?>"/>
                         </td>
                     </tr>   
                         <td>
@@ -64,8 +113,14 @@ if(isset($_POST['forminscription']))
                         </td>
                     </tr>       
                 </table> <br><br>
-                <input type="submit" value="Valider"> 
+                <input type="submit" value="Valider" name="forminscription"> 
             </form>
+            <?php 
+            if (isset($erreur))
+            {
+                echo '<font color="red">'.$erreur."</font>";
+            }
+            ?>
         </div>
     </body>
 </html>
